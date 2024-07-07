@@ -25,8 +25,11 @@ For example it could be applied to an existing API or to add to an SQL prepared 
 ## Development TODOs
 
 [ ] Finish Tokenizer
+
 [ ] Build Parser
+
 [ ] Create sample integrations to use with Remix and easy to apply to Drizzle
+
 [ ] Publish to npm
 
 ## Documentation

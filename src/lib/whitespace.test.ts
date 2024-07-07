@@ -48,6 +48,10 @@ describe("lex whitespace - negative", () => {
     expect(lexWhitespace("foo", 0)).toStrictEqual(null);
   });
 
+  test("123", () => {
+    expect(lexWhitespace("123", 0)).toStrictEqual(null);
+  });
+
   test("empty", () => {
     expect(lexWhitespace("", 0)).toStrictEqual(null);
   });
