@@ -3,7 +3,31 @@ const whitespace = [" ", "\n", "\r"];
 const numbers_regex = /^[0-9]+(\.[0-9]+)?/;
 const identifier_regex = /^[a-zA-Z_][a-zA-Z0-9_]*/;
 
-export const keywords = ["filter", "orderby", "top", "limit", "skip", "expand"];
+export const keywords = [
+  "filter",
+  "orderby",
+  "top",
+  "limit",
+  "skip",
+  "expand",
+  "select",
+  "null",
+];
+
+export const symbols = [
+  "(",
+  ")",
+  "[",
+  "]",
+  "{",
+  "}",
+  "=",
+  ",",
+  ":",
+  ";",
+  "&",
+  "|",
+];
 
 export const operators = [
   "eq",
@@ -19,6 +43,7 @@ export const operators = [
 
 type Token = { index: number; lexeme: string } & (
   | { type: "operator" }
+  | { type: "symbol" }
   | { type: "whitespace" }
   | { type: "string" }
   | { type: "number" }
@@ -87,6 +112,16 @@ export let lexWhitespace = (source: string, index: number): Token | null => {
   return { index, type: "whitespace", lexeme: source.slice(index, start) };
 };
 
+export let lexSymbol = (source: string, index: number): Token | null => {
+  for (let symbol of symbols) {
+    if (source.startsWith(symbol, index)) {
+      return { index, type: "symbol", lexeme: symbol };
+    }
+  }
+
+  return null;
+};
+
 export let lexOperator = (source: string, index: number): Token | null => {
   for (let operator of operators) {
     if (source.startsWith(operator, index)) {
@@ -117,4 +152,36 @@ export let lexIdentifier = (source: string, index: number): Token | null => {
   let lexeme = identifier_regex.exec(source.slice(index))![0];
 
   return { index, type: "identifier", lexeme };
+};
+
+let lexers = [
+  lexWhitespace,
+  lexKeyword,
+  lexNumber,
+  lexString,
+  lexKeyword,
+  lexSymbol,
+  lexOperator,
+  lexIdentifier,
+];
+
+export let lex = (source: string): Token[] => {
+  let tokens: Token[] = [];
+  let index = 0;
+
+  while (index < source.length) {
+    for (let lexer of lexers) {
+      let token = lexer(source, index);
+
+      if (token) {
+        tokens.push(token);
+        index += token.lexeme.length;
+        break;
+      }
+    }
+
+    // throw Error(`Unexpected char at ${index}`);
+  }
+
+  return tokens;
 };
