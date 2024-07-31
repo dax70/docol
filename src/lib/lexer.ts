@@ -11,6 +11,8 @@ export const keywords = [
   "skip",
   "expand",
   "select",
+  "true",
+  "false",
   "null",
 ];
 
@@ -51,20 +53,21 @@ type Token = { index: number; lexeme: string } & (
   | { type: "identifier" }
 );
 
-export let lexNumber = (source: string, index: number): Token | null => {
-  let match = numbers_regex.test(source.slice(index));
+export const lexNumber = (source: string, index: number): Token | null => {
+  const match = numbers_regex.test(source.slice(index));
 
   if (!match) {
     return null;
   }
 
-  let lexeme = numbers_regex.exec(source.slice(index))![0];
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const lexeme = numbers_regex.exec(source.slice(index))![0];
 
   return { index, type: "number", lexeme };
 };
 
 // TODO: once we handle EOF, we can remove the `undefined` check
-export let lexString = (source: string, index: number): Token | null => {
+export const lexString = (source: string, index: number): Token | null => {
   if (source[index] !== '"') {
     return null;
   }
@@ -72,7 +75,7 @@ export let lexString = (source: string, index: number): Token | null => {
   let current = index + 1;
 
   while (true) {
-    let char = source[current];
+    const char = source[current];
 
     if (char === undefined) {
       return null; // TODO: error message
@@ -90,11 +93,11 @@ export let lexString = (source: string, index: number): Token | null => {
   }
 };
 
-export let lexWhitespace = (source: string, index: number): Token | null => {
+export const lexWhitespace = (source: string, index: number): Token | null => {
   let start = index;
 
   while (true) {
-    let char = source[start];
+    const char = source[start];
 
     if (char && whitespace.includes(char)) {
       start++;
@@ -112,8 +115,8 @@ export let lexWhitespace = (source: string, index: number): Token | null => {
   return { index, type: "whitespace", lexeme: source.slice(index, start) };
 };
 
-export let lexSymbol = (source: string, index: number): Token | null => {
-  for (let symbol of symbols) {
+export const lexSymbol = (source: string, index: number): Token | null => {
+  for (const symbol of symbols) {
     if (source.startsWith(symbol, index)) {
       return { index, type: "symbol", lexeme: symbol };
     }
@@ -122,8 +125,8 @@ export let lexSymbol = (source: string, index: number): Token | null => {
   return null;
 };
 
-export let lexOperator = (source: string, index: number): Token | null => {
-  for (let operator of operators) {
+export const lexOperator = (source: string, index: number): Token | null => {
+  for (const operator of operators) {
     if (source.startsWith(operator, index)) {
       return { index, type: "operator", lexeme: operator };
     }
@@ -132,8 +135,8 @@ export let lexOperator = (source: string, index: number): Token | null => {
   return null;
 };
 
-export let lexKeyword = (source: string, index: number): Token | null => {
-  for (let keyword of keywords) {
+export const lexKeyword = (source: string, index: number): Token | null => {
+  for (const keyword of keywords) {
     if (source.startsWith(keyword, index)) {
       return { index, type: "keyword", lexeme: keyword };
     }
@@ -142,19 +145,20 @@ export let lexKeyword = (source: string, index: number): Token | null => {
   return null;
 };
 
-export let lexIdentifier = (source: string, index: number): Token | null => {
-  let match = identifier_regex.test(source.slice(index));
+export const lexIdentifier = (source: string, index: number): Token | null => {
+  const match = identifier_regex.test(source.slice(index));
 
   if (!match) {
     return null;
   }
 
-  let lexeme = identifier_regex.exec(source.slice(index))![0];
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const lexeme = identifier_regex.exec(source.slice(index))![0];
 
   return { index, type: "identifier", lexeme };
 };
 
-let lexers = [
+const lexers = [
   lexWhitespace,
   lexKeyword,
   lexNumber,
@@ -165,13 +169,13 @@ let lexers = [
   lexIdentifier,
 ];
 
-export let lex = (source: string): Token[] => {
-  let tokens: Token[] = [];
+export const lex = (source: string): Token[] => {
+  const tokens: Token[] = [];
   let index = 0;
 
   while (index < source.length) {
-    for (let lexer of lexers) {
-      let token = lexer(source, index);
+    for (const lexer of lexers) {
+      const token = lexer(source, index);
 
       if (token) {
         tokens.push(token);
