@@ -1,30 +1,5 @@
-// ODataParser.ts
-
-// Types
-type TokenType =
-  | "Identifier"
-  | "Number"
-  | "String"
-  | "Equals"
-  | "NotEquals"
-  | "GreaterThan"
-  | "GreaterThanOrEqual"
-  | "LessThan"
-  | "LessThanOrEqual"
-  | "And"
-  | "Or"
-  | "LeftParen"
-  | "RightParen"
-  | "Comma"
-  | "Dollar"
-  | "Ampersand"
-  | "EOF";
-
-type Token = {
-  type: TokenType;
-  value: string;
-  position: number;
-};
+import type { Token, TokenType } from "./tokenizer";
+import { tokenize } from "./tokenizer";
 
 type ASTNode =
   | { type: "Query"; children: ASTNode[] }
@@ -42,151 +17,6 @@ type ASTNode =
   | { type: "StringLiteral"; value: string }
   | { type: "NumberLiteral"; value: number };
 
-// Lexer
-const isAlpha = (c: string): boolean => /[a-zA-Z]/.test(c);
-const isDigit = (c: string): boolean => /[0-9]/.test(c);
-const isAlphaNumeric = (c: string): boolean => isAlpha(c) || isDigit(c);
-
-const tokenizeIdentifier = (
-  input: string,
-  position: number
-): [Token, number] => {
-  let end = position;
-  while (
-    end < input.length &&
-    (isAlphaNumeric(input[end]) || input[end] === "_")
-  ) {
-    end++;
-  }
-
-  const value = input.slice(position, end);
-  let type: TokenType = "Identifier";
-
-  switch (value) {
-    case "eq":
-      type = "Equals";
-      break;
-    case "ne":
-      type = "NotEquals";
-      break;
-    case "gt":
-      type = "GreaterThan";
-      break;
-    case "ge":
-      type = "GreaterThanOrEqual";
-      break;
-    case "lt":
-      type = "LessThan";
-      break;
-    case "le":
-      type = "LessThanOrEqual";
-      break;
-    case "and":
-      type = "And";
-      break;
-    case "or":
-      type = "Or";
-      break;
-  }
-  return [{ type, value, position }, end];
-};
-
-const tokenizeNumber = (input: string, position: number): [Token, number] => {
-  let end = position;
-
-  while (end < input.length && isDigit(input[end])) {
-    end++;
-  }
-
-  if (input[end] === "." && isDigit(input[end + 1])) {
-    end += 2;
-    while (end < input.length && isDigit(input[end])) {
-      end++;
-    }
-  }
-
-  return [{ type: "Number", value: input.slice(position, end), position }, end];
-};
-
-const tokenizeString = (input: string, position: number): [Token, number] => {
-  let end = position + 1;
-
-  while (end < input.length && input[end] !== "'") {
-    end++;
-  }
-
-  if (end === input.length) {
-    throw new Error(`Unterminated string at position ${position}`);
-  }
-
-  return [
-    { type: "String", value: input.slice(position + 1, end), position },
-    end + 1,
-  ];
-};
-
-const tokenize = (input: string): Token[] => {
-  const tokens: Token[] = [];
-  let position = 0;
-
-  while (position < input.length) {
-    if (/\s/.test(input[position])) {
-      position++;
-      continue;
-    }
-
-    if (isAlpha(input[position])) {
-      const [token, newPos] = tokenizeIdentifier(input, position);
-      tokens.push(token);
-      position = newPos;
-    } else if (isDigit(input[position])) {
-      const [token, newPos] = tokenizeNumber(input, position);
-      tokens.push(token);
-      position = newPos;
-    } else {
-      switch (input[position]) {
-        case "'":
-          // biome-ignore lint/correctness/noSwitchDeclarations: <explanation>
-          const [strToken, newPos] = tokenizeString(input, position);
-          tokens.push(strToken);
-          position = newPos;
-          break;
-        case "(":
-          tokens.push({ type: "LeftParen", value: "(", position });
-          position++;
-          break;
-        case ")":
-          tokens.push({ type: "RightParen", value: ")", position });
-          position++;
-          break;
-        case ",":
-          tokens.push({ type: "Comma", value: ",", position });
-          position++;
-          break;
-        case "$":
-          tokens.push({ type: "Dollar", value: "$", position });
-          position++;
-          break;
-        case "=":
-          tokens.push({ type: "Equals", value: "=", position });
-          position++;
-          break;
-        case "&":
-          tokens.push({ type: "Ampersand", value: "&", position });
-          position++;
-          break;
-        default:
-          throw new Error(
-            `Unexpected character '${input[position]}' at position ${position}`
-          );
-      }
-    }
-  }
-
-  tokens.push({ type: "EOF", value: "", position: input.length });
-  return tokens;
-};
-
 // Parser
 type ParserState = {
   tokens: Token[];
@@ -194,8 +24,11 @@ type ParserState = {
 };
 
 const peek = (state: ParserState): Token => state.tokens[state.current];
+
 const previous = (state: ParserState): Token => state.tokens[state.current - 1];
+
 const isAtEnd = (state: ParserState): boolean => peek(state).type === "EOF";
+
 const check = (state: ParserState, type: TokenType): boolean =>
   !isAtEnd(state) && peek(state).type === type;
 
@@ -213,6 +46,7 @@ const match = (
       return [true, advance(state)];
     }
   }
+
   return [false, state];
 };
 
@@ -224,6 +58,7 @@ const consume = (
   if (check(state, type)) {
     return [peek(state), advance(state)];
   }
+
   throw new Error(`${message} at position ${peek(state).position}`);
 };
 
@@ -264,6 +99,7 @@ const parseOrderByFields = (
       "Identifier",
       "Expected field name"
     );
+
     let direction: "asc" | "desc" = "asc";
     let afterDirection = afterField;
 
@@ -271,6 +107,7 @@ const parseOrderByFields = (
       afterField,
       "Identifier"
     );
+
     if (
       directionMatched &&
       ["asc", "desc"].includes(previous(afterDirectionToken).value)
@@ -283,6 +120,7 @@ const parseOrderByFields = (
     currentState = afterDirection;
 
     const [commaMatched, afterComma] = match(currentState, "Comma");
+
     if (commaMatched) {
       currentState = afterComma;
     } else {
@@ -296,8 +134,10 @@ const parseOrderByFields = (
 
 const parsePrimary = (state: ParserState): [ASTNode, ParserState] => {
   const [matched, newState] = match(state, "Identifier", "String", "Number");
+
   if (matched) {
     const token = previous(newState);
+
     switch (token.type) {
       case "Identifier":
         return [{ type: "Identifier", value: token.value }, newState];
@@ -310,6 +150,7 @@ const parsePrimary = (state: ParserState): [ASTNode, ParserState] => {
         ];
     }
   }
+
   throw new Error(
     `Unexpected token ${peek(state).value} at position ${peek(state).position}`
   );
@@ -317,17 +158,21 @@ const parsePrimary = (state: ParserState): [ASTNode, ParserState] => {
 
 const parseComparison = (state: ParserState): [ASTNode, ParserState] => {
   const [leftParenMatched, afterLeftParen] = match(state, "LeftParen");
+
   if (leftParenMatched) {
     const [expr, afterExpr] = parseExpression(afterLeftParen);
+
     const [, afterRightParen] = consume(
       afterExpr,
       "RightParen",
       "Expected ')' after expression"
     );
+
     return [expr, afterRightParen];
   }
 
   const [left, afterLeft] = parsePrimary(state);
+
   const [opMatched, afterOp] = match(
     afterLeft,
     "Equals",
@@ -347,21 +192,30 @@ const parseComparison = (state: ParserState): [ASTNode, ParserState] => {
 
 const parseLogicalAnd = (state: ParserState): [ASTNode, ParserState] => {
   let [expr, currentState] = parseComparison(state);
+
   while (true) {
     const [matched, afterAnd] = match(currentState, "And");
+
     if (!matched) break;
+
     const [right, afterRight] = parseComparison(afterAnd);
+
     expr = { type: "LogicalOp", operator: "and", left: expr, right };
+
     currentState = afterRight;
   }
+
   return [expr, currentState];
 };
 
 const parseLogicalOr = (state: ParserState): [ASTNode, ParserState] => {
   let [expr, currentState] = parseLogicalAnd(state);
+
   while (true) {
     const [matched, afterOr] = match(currentState, "Or");
+
     if (!matched) break;
+
     const [right, afterRight] = parseLogicalAnd(afterOr);
     expr = { type: "LogicalOp", operator: "or", left: expr, right };
     currentState = afterRight;
@@ -379,12 +233,14 @@ const parseQuery = (state: ParserState): ASTNode => {
 
   while (!isAtEnd(currentState)) {
     const [dollarMatched, afterDollar] = match(currentState, "Dollar");
+
     if (dollarMatched) {
       const [identifierToken, afterIdentifier] = consume(
         afterDollar,
         "Identifier",
         "Expected identifier after $"
       );
+
       const option = identifierToken.value;
 
       const [, afterEquals] = consume(
@@ -451,6 +307,7 @@ const parseQuery = (state: ParserState): ASTNode => {
       break;
     }
   }
+
   return { type: "Query", children };
 };
 
