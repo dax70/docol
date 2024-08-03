@@ -2,7 +2,186 @@ import { describe, expect, test } from "vitest";
 import { parseOData } from "./parser";
 
 describe("parser tests", () => {
-  test("test - complex", () => {
+  test("simple - eq", () => {
+    const queryString = "$filter=name eq 'John' or age gt 30";
+
+    const ast = parseOData(queryString);
+
+    const expected = {
+      type: "Query",
+      children: [
+        {
+          type: "Filter",
+          value: {
+            type: "LogicalOp",
+            operator: "or",
+            left: {
+              type: "Comparison",
+              operator: "eq",
+              left: {
+                type: "Identifier",
+                value: "name",
+              },
+              right: {
+                type: "StringLiteral",
+                value: "John",
+              },
+            },
+            right: {
+              type: "Comparison",
+              operator: "gt",
+              left: {
+                type: "Identifier",
+                value: "age",
+              },
+              right: {
+                type: "NumberLiteral",
+                value: 30,
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    expect(ast).toStrictEqual(expected);
+  });
+
+  test("simple - and", () => {
+    const queryString = "$filter=name eq 'John' or age gt 30";
+
+    const ast = parseOData(queryString);
+
+    const expected = {
+      type: "Query",
+      children: [
+        {
+          type: "Filter",
+          value: {
+            type: "LogicalOp",
+            operator: "or",
+            left: {
+              type: "Comparison",
+              operator: "eq",
+              left: {
+                type: "Identifier",
+                value: "name",
+              },
+              right: {
+                type: "StringLiteral",
+                value: "John",
+              },
+            },
+            right: {
+              type: "Comparison",
+              operator: "gt",
+              left: {
+                type: "Identifier",
+                value: "age",
+              },
+              right: {
+                type: "NumberLiteral",
+                value: 30,
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    expect(ast).toStrictEqual(expected);
+  });
+
+  test("simple - or", () => {
+    const queryString = "$filter=name eq 'John' or age gt 30";
+
+    const ast = parseOData(queryString);
+    console.log(JSON.stringify(ast, null, 2));
+
+    const expected = {
+      type: "Query",
+      children: [
+        {
+          type: "Filter",
+          value: {
+            type: "LogicalOp",
+            operator: "or",
+            left: {
+              type: "Comparison",
+              operator: "eq",
+              left: {
+                type: "Identifier",
+                value: "name",
+              },
+              right: {
+                type: "StringLiteral",
+                value: "John",
+              },
+            },
+            right: {
+              type: "Comparison",
+              operator: "gt",
+              left: {
+                type: "Identifier",
+                value: "age",
+              },
+              right: {
+                type: "NumberLiteral",
+                value: 30,
+              },
+            },
+          },
+        },
+      ],
+    };
+    expect(ast).toStrictEqual(expected);
+  });
+
+  test("simple - or", () => {
+    const queryString = "$filter=name eq 'John' or age gt 30";
+
+    const ast = parseOData(queryString);
+    console.log(JSON.stringify(ast, null, 2));
+    const expected = {
+      type: "Query",
+      children: [
+        {
+          type: "Filter",
+          value: {
+            type: "LogicalOp",
+            operator: "or",
+            left: {
+              type: "Comparison",
+              operator: "eq",
+              left: {
+                type: "Identifier",
+                value: "name",
+              },
+              right: {
+                type: "StringLiteral",
+                value: "John",
+              },
+            },
+            right: {
+              type: "Comparison",
+              operator: "gt",
+              left: {
+                type: "Identifier",
+                value: "age",
+              },
+              right: {
+                type: "NumberLiteral",
+                value: 30,
+              },
+            },
+          },
+        },
+      ],
+    };
+    expect(ast).toStrictEqual(expected);
+  });
+
+  test("complex", () => {
     const queryString =
       "$filter=(name eq 'John' or age gt 30) and city eq 'New York'&$select=name,age&$top=10";
 
