@@ -182,11 +182,13 @@ const parseComparison = (state: ParserState): [ASTNode, ParserState] => {
     "LessThan",
     "LessThanOrEqual"
   );
+
   if (opMatched) {
     const operator = previous(afterOp).value;
     const [right, afterRight] = parsePrimary(afterOp);
     return [{ type: "Comparison", operator, left, right }, afterRight];
   }
+
   return [left, afterLeft];
 };
 
@@ -199,9 +201,7 @@ const parseLogicalAnd = (state: ParserState): [ASTNode, ParserState] => {
     if (!matched) break;
 
     const [right, afterRight] = parseComparison(afterAnd);
-
     expr = { type: "LogicalOp", operator: "and", left: expr, right };
-
     currentState = afterRight;
   }
 
@@ -220,6 +220,7 @@ const parseLogicalOr = (state: ParserState): [ASTNode, ParserState] => {
     expr = { type: "LogicalOp", operator: "or", left: expr, right };
     currentState = afterRight;
   }
+
   return [expr, currentState];
 };
 
@@ -234,6 +235,9 @@ const parseQuery = (state: ParserState): ASTNode => {
   while (!isAtEnd(currentState)) {
     const [dollarMatched, afterDollar] = match(currentState, "Dollar");
 
+    // OData expects Options prefixed with $
+    // https://docs.oasis-open.org/odata/odata/v4.0/errata03/os/complete/part1-protocol/odata-v4.0-errata03-os-part1-protocol-complete.html#_Toc453752212
+    // Followed by an "=" sign
     if (dollarMatched) {
       const [identifierToken, afterIdentifier] = consume(
         afterDollar,

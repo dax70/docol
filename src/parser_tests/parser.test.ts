@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { parseOData } from "./parser";
+import { parseOData } from "../lib/parser";
 
 describe("parser tests", () => {
-  test("simple - eq", () => {
-    const queryString = "$filter=name eq 'John' or age gt 30";
-
+  test("simple - or with and", () => {
+    const queryString =
+      "$filter=name eq 'John' or age gt 30 and city eq 'New York'";
     const ast = parseOData(queryString);
 
     const expected = {
@@ -28,15 +28,31 @@ describe("parser tests", () => {
               },
             },
             right: {
-              type: "Comparison",
-              operator: "gt",
+              type: "LogicalOp",
+              operator: "and",
               left: {
-                type: "Identifier",
-                value: "age",
+                type: "Comparison",
+                operator: "gt",
+                left: {
+                  type: "Identifier",
+                  value: "age",
+                },
+                right: {
+                  type: "NumberLiteral",
+                  value: 30,
+                },
               },
               right: {
-                type: "NumberLiteral",
-                value: 30,
+                type: "Comparison",
+                operator: "eq",
+                left: {
+                  type: "Identifier",
+                  value: "city",
+                },
+                right: {
+                  type: "StringLiteral",
+                  value: "New York",
+                },
               },
             },
           },
@@ -47,100 +63,11 @@ describe("parser tests", () => {
     expect(ast).toStrictEqual(expected);
   });
 
-  test("simple - and", () => {
-    const queryString = "$filter=name eq 'John' or age gt 30";
-
+  test("simple - and with or", () => {
+    const queryString =
+      "$filter=name eq 'John' and age gt 30 or city eq 'New York'";
     const ast = parseOData(queryString);
 
-    const expected = {
-      type: "Query",
-      children: [
-        {
-          type: "Filter",
-          value: {
-            type: "LogicalOp",
-            operator: "or",
-            left: {
-              type: "Comparison",
-              operator: "eq",
-              left: {
-                type: "Identifier",
-                value: "name",
-              },
-              right: {
-                type: "StringLiteral",
-                value: "John",
-              },
-            },
-            right: {
-              type: "Comparison",
-              operator: "gt",
-              left: {
-                type: "Identifier",
-                value: "age",
-              },
-              right: {
-                type: "NumberLiteral",
-                value: 30,
-              },
-            },
-          },
-        },
-      ],
-    };
-
-    expect(ast).toStrictEqual(expected);
-  });
-
-  test("simple - or", () => {
-    const queryString = "$filter=name eq 'John' or age gt 30";
-
-    const ast = parseOData(queryString);
-    console.log(JSON.stringify(ast, null, 2));
-
-    const expected = {
-      type: "Query",
-      children: [
-        {
-          type: "Filter",
-          value: {
-            type: "LogicalOp",
-            operator: "or",
-            left: {
-              type: "Comparison",
-              operator: "eq",
-              left: {
-                type: "Identifier",
-                value: "name",
-              },
-              right: {
-                type: "StringLiteral",
-                value: "John",
-              },
-            },
-            right: {
-              type: "Comparison",
-              operator: "gt",
-              left: {
-                type: "Identifier",
-                value: "age",
-              },
-              right: {
-                type: "NumberLiteral",
-                value: 30,
-              },
-            },
-          },
-        },
-      ],
-    };
-    expect(ast).toStrictEqual(expected);
-  });
-
-  test("simple - or", () => {
-    const queryString = "$filter=name eq 'John' or age gt 30";
-
-    const ast = parseOData(queryString);
     console.log(JSON.stringify(ast, null, 2));
     const expected = {
       type: "Query",
@@ -151,42 +78,57 @@ describe("parser tests", () => {
             type: "LogicalOp",
             operator: "or",
             left: {
-              type: "Comparison",
-              operator: "eq",
+              type: "LogicalOp",
+              operator: "and",
               left: {
-                type: "Identifier",
-                value: "name",
+                type: "Comparison",
+                operator: "eq",
+                left: {
+                  type: "Identifier",
+                  value: "name",
+                },
+                right: {
+                  type: "StringLiteral",
+                  value: "John",
+                },
               },
               right: {
-                type: "StringLiteral",
-                value: "John",
+                type: "Comparison",
+                operator: "gt",
+                left: {
+                  type: "Identifier",
+                  value: "age",
+                },
+                right: {
+                  type: "NumberLiteral",
+                  value: 30,
+                },
               },
             },
             right: {
               type: "Comparison",
-              operator: "gt",
+              operator: "eq",
               left: {
                 type: "Identifier",
-                value: "age",
+                value: "city",
               },
               right: {
-                type: "NumberLiteral",
-                value: 30,
+                type: "StringLiteral",
+                value: "New York",
               },
             },
           },
         },
       ],
     };
+
     expect(ast).toStrictEqual(expected);
   });
 
-  test("complex", () => {
+  test("with - select", () => {
     const queryString =
       "$filter=(name eq 'John' or age gt 30) and city eq 'New York'&$select=name,age&$top=10";
-
     const ast = parseOData(queryString);
-    // console.log(JSON.stringify(ast, null, 2));
 
     const expected = {
       type: "Query",
@@ -234,6 +176,75 @@ describe("parser tests", () => {
               right: {
                 type: "StringLiteral",
                 value: "New York",
+              },
+            },
+          },
+        },
+        {
+          type: "Select",
+          fields: ["name", "age"],
+        },
+        {
+          type: "Top",
+          value: 10,
+        },
+      ],
+    };
+
+    expect(ast).toStrictEqual(expected);
+  });
+
+  test("with - select", () => {
+    const queryString =
+      "$filter=name eq 'John' or (age gt 30 and city eq 'New York')&$select=name,age&$top=10";
+    const ast = parseOData(queryString);
+
+    const expected = {
+      type: "Query",
+      children: [
+        {
+          type: "Filter",
+          value: {
+            type: "LogicalOp",
+            operator: "or",
+            left: {
+              type: "Comparison",
+              operator: "eq",
+              left: {
+                type: "Identifier",
+                value: "name",
+              },
+              right: {
+                type: "StringLiteral",
+                value: "John",
+              },
+            },
+            right: {
+              type: "LogicalOp",
+              operator: "and",
+              left: {
+                type: "Comparison",
+                operator: "gt",
+                left: {
+                  type: "Identifier",
+                  value: "age",
+                },
+                right: {
+                  type: "NumberLiteral",
+                  value: 30,
+                },
+              },
+              right: {
+                type: "Comparison",
+                operator: "eq",
+                left: {
+                  type: "Identifier",
+                  value: "city",
+                },
+                right: {
+                  type: "StringLiteral",
+                  value: "New York",
+                },
               },
             },
           },
