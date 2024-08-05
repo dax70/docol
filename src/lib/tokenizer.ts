@@ -10,6 +10,7 @@ export type TokenType =
   | "LessThanOrEqual"
   | "And"
   | "Or"
+  | "Not"
   | "LeftParen"
   | "RightParen"
   | "Comma"
@@ -27,6 +28,18 @@ export type Token = {
 const isAlpha = (c: string): boolean => /[a-zA-Z]/.test(c);
 const isDigit = (c: string): boolean => /[0-9]/.test(c);
 const isAlphaNumeric = (c: string): boolean => isAlpha(c) || isDigit(c);
+
+export const operators = [
+  ["eq", "Equals"],
+  ["ne", "NotEquals"],
+  ["gt", "GreaterThan"],
+  ["ge", "GreaterThanOrEqual"],
+  ["lt", "LessThan"],
+  ["le", "LessThanOrEqual"],
+  ["and", "And"],
+  ["or", "Or"],
+  ["not", "Not"],
+];
 
 export const tokenizeIdentifier = (
   input: string,
@@ -67,6 +80,9 @@ export const tokenizeIdentifier = (
       break;
     case "or":
       type = "Or";
+      break;
+    case "not":
+      type = "Not";
       break;
   }
 
