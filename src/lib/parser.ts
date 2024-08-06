@@ -1,7 +1,7 @@
 import type { Token, TokenType } from "./tokenizer";
 import { tokenize } from "./tokenizer";
 
-type ASTNode =
+export type ASTNode =
   | { type: "Query"; children: ASTNode[] }
   | { type: "Filter"; value: ASTNode }
   | { type: "Select"; fields: string[] }

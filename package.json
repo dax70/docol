@@ -26,5 +26,8 @@
     "vite": "^5.0.0",
     "vite-plugin-dts": "^3.6.4",
     "vitest": "^2.0.4"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.32.1"
   }
 }
